@@ -1,12 +1,15 @@
 import { getProviders, signIn } from "next-auth/react";
 import Header from "../../components/Header";
+import Image from "next/image";
 
-export default function signin({ providers }) {
+export default function SignIn({ providers }) {
   return (
     <>
       <Header />
       <div className="flex justify-center space-x-7 mt-20">
-        <img
+        <Image
+          width={300}
+          height={300}
           className="hidden object-cover rotate-6 md:inline-flex md:w-70"
           src="https://superviral.com.au/wp-content/uploads/2020/11/Copy-of-Untitled.png"
           alt="instagram-image"
@@ -14,7 +17,9 @@ export default function signin({ providers }) {
         <div className="">
           {Object.values(providers).map((provider) => (
             <div className="flex flex-col items-center" key={provider.name}>
-              <img
+              <Image
+                width={500}
+                height={500}
                 className="w-32 object-cover"
                 src="https://socodigital.com/wp-content/uploads/2021/03/Instagram-300x300.png"
                 alt="instagram-logo"

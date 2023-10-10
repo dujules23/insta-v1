@@ -5,8 +5,11 @@ import {
   PlusCircleIcon,
 } from "@heroicons/react/24/outline";
 import { HomeIcon } from "@heroicons/react/24/solid";
+import { useSession, signIn, signOut } from "next-auth/react";
 
 export default function Header() {
+  const { data: session, status } = useSession();
+  console.log(session);
   return (
     <div className="shadow-sm border-b sticky top-0 bg-white z-30">
       <div className="flex items-center justify-between max-w-6xl mx-4 xl:mx-auto">
@@ -45,12 +48,19 @@ export default function Header() {
 
         <div className="flex space-x-4 items-center">
           <HomeIcon className="hidden md:inline-flex cursor-pointer h-6 hover:scale-125 transition-transform duration-200 ease-out" />
-          <PlusCircleIcon className="cursor-pointer h-6 hover:scale-125 transition-transform duration-200 ease-out" />
-          <img
-            src="https://rstatic.stores.musicarts.com/locations/durrell-j-2-mac-columbia---sc-5f82b5ac-3cb4-474f-b148-0c8cfb143d72.jpg"
-            alt="user-image"
-            className="h-10 rounded-full"
-          />
+          {session ? (
+            <>
+              <PlusCircleIcon className="cursor-pointer h-6 hover:scale-125 transition-transform duration-200 ease-out" />
+              <img
+                onClick={signOut}
+                src={session.user.image}
+                alt="user-image"
+                className="h-10 rounded-full"
+              />
+            </>
+          ) : (
+            <button onClick={signIn}>Sign In</button>
+          )}
         </div>
       </div>
     </div>
