@@ -3,11 +3,54 @@ import { useRecoilState } from "recoil";
 import Modal from "react-modal";
 import { CameraIcon } from "@heroicons/react/24/outline";
 import { useRef, useState } from "react";
+import {
+  addDoc,
+  collection,
+  serverTimestamp,
+  updateDoc,
+  doc,
+} from "firebase/firestore";
+import { db, storage } from "../firebase";
+import { useSession } from "next-auth/react";
+import { ref, uploadString, getDownloadURL } from "firebase/storage";
 
 export default function UploadModal() {
   const [open, setOpen] = useRecoilState(modalState);
   const [selectedFile, setSelectedFile] = useState();
+  const [loading, setLoading] = useState(false);
+  const { data: session } = useSession();
   const filePickerRef = useRef(null);
+  const captionRef = useRef(null);
+
+  // study this function, deals with storing data and image into firestore database.
+  const uploadPost = async () => {
+    if (loading) return;
+
+    setLoading(true);
+    // wait for document after submitting post
+    const docRef = await addDoc(collection(db, "posts"), {
+      caption: captionRef.current.value,
+      username: session.user.username,
+      profileImage: session.user.image,
+      timestamp: serverTimestamp(),
+    });
+    // take image and store it in firebase storage with docRef id
+    const imageRef = ref(storage, `posts/${docRef.id}/image`);
+    // upload image into storage
+    await uploadString(imageRef, selectedFile, "data_url").then(
+      () => async (snapshot) => {
+        const downloadURL = await getDownloadURL(imageRef);
+        // update the document
+        await updateDoc(doc(db, "posts", docRef.id), {
+          image: downloadURL,
+        });
+      }
+    );
+    // reset modal, loading state, selectedFile
+    setOpen(false);
+    setLoading(false);
+    setSelectedFile(null);
+  };
 
   // method for adding Images to new post
   const addImageToPost = (event) => {
@@ -22,6 +65,7 @@ export default function UploadModal() {
     };
     console.log;
   };
+
   return (
     <div>
       {open && (
@@ -59,9 +103,11 @@ export default function UploadModal() {
               maxLength="150"
               placeholder="Please enter your caption..."
               className="m-4 border-none text-center w-full focus:ring-0"
+              ref={captionRef}
             />
             <button
-              disabled
+              disabled={!selectedFile || loading}
+              onClick={uploadPost}
               className="w-full bg-red-600 text-white p-2 shadow-md hover:brightness-125 disabled:bg-gray-200 disabled:cursor-not-allowed disabled:hover:brightness-100"
             >
               Upload Post
