@@ -16,7 +16,7 @@ import { ref, uploadString, getDownloadURL } from "firebase/storage";
 
 export default function UploadModal() {
   const [open, setOpen] = useRecoilState(modalState);
-  const [selectedFile, setSelectedFile] = useState();
+  const [selectedFile, setSelectedFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const { data: session } = useSession();
   const filePickerRef = useRef(null);
@@ -38,7 +38,7 @@ export default function UploadModal() {
     const imageRef = ref(storage, `posts/${docRef.id}/image`);
     // upload image into storage
     await uploadString(imageRef, selectedFile, "data_url").then(
-      () => async (snapshot) => {
+      async (snapshot) => {
         const downloadURL = await getDownloadURL(imageRef);
         // update the document
         await updateDoc(doc(db, "posts", docRef.id), {
