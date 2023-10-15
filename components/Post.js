@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { EllipsisHorizontalIcon } from "@heroicons/react/24/solid";
 import { useSession } from "next-auth/react";
 import {
+  doc,
+  deleteDoc,
+  setDoc,
   addDoc,
   collection,
   serverTimestamp,
@@ -16,12 +19,15 @@ import {
   ChatBubbleOvalLeftIcon,
   FaceSmileIcon,
 } from "@heroicons/react/24/outline";
+import { HeartIcon as HeartIconFilled } from "@heroicons/react/24/solid";
 import Moment from "react-moment";
 
 export default function Post({ img, userImg, caption, username, id }) {
   const { data: session } = useSession();
   const [comment, setComment] = useState("");
   const [comments, setComments] = useState([]);
+  const [hasLiked, setHasLiked] = useState(false);
+  const [likes, setLikes] = useState([]);
 
   // sends comments to the data base
   const sentComment = async (e) => {
@@ -38,6 +44,20 @@ export default function Post({ img, userImg, caption, username, id }) {
     });
   };
 
+  const likePost = async (e) => {
+    if (hasLiked) {
+      // deletes like if a like is already present
+      await deleteDoc(doc(db, "posts", id, "likes", session.user.uid), {
+        username: session.user.username,
+      });
+    } else {
+      // setDoc modifies instead of adding something new like adDoc
+      await setDoc(doc(db, "posts", id, "likes", session.user.uid), {
+        username: session.user.username,
+      });
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = onSnapshot(
       query(
@@ -49,6 +69,19 @@ export default function Post({ img, userImg, caption, username, id }) {
       }
     );
   }, [db, id]);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(
+      collection(db, "posts", id, "likes"),
+      (snapshot) => setLikes(snapshot.docs)
+    );
+  }, [db]);
+
+  useEffect(() => {
+    setHasLiked(
+      likes.findIndex((like) => like.id === session?.user.uid) !== -1
+    );
+  }, [likes]);
 
   return (
     <div className="bg-white my-7 border rounded-md">
@@ -73,7 +106,14 @@ export default function Post({ img, userImg, caption, username, id }) {
           {/* Post Buttons */}
           <div className="flex justify-between px-4 pt-4">
             <div className="flex space-x-4">
-              <HeartIcon className="btn" />
+              {hasLiked ? (
+                <HeartIconFilled
+                  onClick={likePost}
+                  className="text-red-400 btn"
+                />
+              ) : (
+                <HeartIcon onClick={likePost} className="btn" />
+              )}
               <ChatBubbleOvalLeftIcon className="btn" />
             </div>
             <BookmarkIcon className="btn" />
