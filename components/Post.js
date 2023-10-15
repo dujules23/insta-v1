@@ -57,7 +57,7 @@ export default function Post({ img, userImg, caption, username, id }) {
       });
     }
   };
-
+  // retrieves comments from the database
   useEffect(() => {
     const unsubscribe = onSnapshot(
       query(
@@ -69,7 +69,7 @@ export default function Post({ img, userImg, caption, username, id }) {
       }
     );
   }, [db, id]);
-
+  // grabs the likes from from the database
   useEffect(() => {
     const unsubscribe = onSnapshot(
       collection(db, "posts", id, "likes"),
