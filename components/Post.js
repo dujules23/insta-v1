@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { EllipsisHorizontalIcon } from "@heroicons/react/24/solid";
-import { useSession } from "next-auth/react";
 import {
   doc,
   deleteDoc,
@@ -22,12 +21,15 @@ import {
 import { HeartIcon as HeartIconFilled } from "@heroicons/react/24/solid";
 import Moment from "react-moment";
 
+import { useRecoilState } from "recoil";
+import { userState } from "../atom/userAtom";
+
 export default function Post({ img, userImg, caption, username, id }) {
-  const { data: session } = useSession();
   const [comment, setComment] = useState("");
   const [comments, setComments] = useState([]);
   const [hasLiked, setHasLiked] = useState(false);
   const [likes, setLikes] = useState([]);
+  const [currentUser] = useRecoilState(userState);
 
   // sends comments to the data base
   const sentComment = async (e) => {
@@ -38,8 +40,8 @@ export default function Post({ img, userImg, caption, username, id }) {
 
     await addDoc(collection(db, "posts", id, "comments"), {
       comment: commentToSend,
-      username: session.user.username,
-      userImage: session.user.image,
+      username: currentUser?.username,
+      userImage: currentUser?.userImg,
       timestamp: serverTimestamp(),
     });
   };
@@ -47,13 +49,13 @@ export default function Post({ img, userImg, caption, username, id }) {
   const likePost = async (e) => {
     if (hasLiked) {
       // deletes like if a like is already present
-      await deleteDoc(doc(db, "posts", id, "likes", session.user.uid), {
-        username: session.user.username,
+      await deleteDoc(doc(db, "posts", id, "likes", currentUser?.uid), {
+        username: currentUser?.username,
       });
     } else {
       // setDoc modifies instead of adding something new like adDoc
-      await setDoc(doc(db, "posts", id, "likes", session.user.uid), {
-        username: session.user.username,
+      await setDoc(doc(db, "posts", id, "likes", currentUser?.uid), {
+        username: currentUser?.username,
       });
     }
   };
@@ -78,9 +80,7 @@ export default function Post({ img, userImg, caption, username, id }) {
   }, [db]);
 
   useEffect(() => {
-    setHasLiked(
-      likes.findIndex((like) => like.id === session?.user.uid) !== -1
-    );
+    setHasLiked(likes.findIndex((like) => like.id === currentUser?.uid) !== -1);
   }, [likes]);
 
   return (
@@ -101,7 +101,7 @@ export default function Post({ img, userImg, caption, username, id }) {
 
       <img className="object-cover w-full" src={img} alt="" />
 
-      {session && (
+      {currentUser && (
         <>
           {/* Post Buttons */}
           <div className="flex justify-between px-4 pt-4">
@@ -148,7 +148,7 @@ export default function Post({ img, userImg, caption, username, id }) {
       )}
 
       {/* Post Input Box */}
-      {session && (
+      {currentUser && (
         <form className="flex items-center p-4">
           <FaceSmileIcon className="h-7" />
           <input
