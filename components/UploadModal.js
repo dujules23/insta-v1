@@ -1,4 +1,5 @@
 import { modalState } from "../atom/modalAtom";
+import { userState } from "../atom/userAtom";
 import { useRecoilState } from "recoil";
 import Modal from "react-modal";
 import { CameraIcon } from "@heroicons/react/24/outline";
@@ -11,14 +12,13 @@ import {
   doc,
 } from "firebase/firestore";
 import { db, storage } from "../firebase";
-import { useSession } from "next-auth/react";
 import { ref, uploadString, getDownloadURL } from "firebase/storage";
 
 export default function UploadModal() {
   const [open, setOpen] = useRecoilState(modalState);
+  const [currentUser] = useRecoilState(userState);
   const [selectedFile, setSelectedFile] = useState(null);
   const [loading, setLoading] = useState(false);
-  const { data: session } = useSession();
   const filePickerRef = useRef(null);
   const captionRef = useRef(null);
 
@@ -30,8 +30,8 @@ export default function UploadModal() {
     // wait for document after submitting post
     const docRef = await addDoc(collection(db, "posts"), {
       caption: captionRef.current.value,
-      username: session.user.username,
-      profileImage: session.user.image,
+      username: currentUser?.username,
+      profileImage: currentUser?.userImg,
       timestamp: serverTimestamp(),
     });
     // take image and store it in firebase storage with docRef id
